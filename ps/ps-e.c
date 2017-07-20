@@ -53,6 +53,8 @@
 #define PROC_PATH "/proc"
 #define TARGET_FILE_NAME "status"
 
+#define MAX_PATH_LEN 256
+
 int main ()
 {
 DIR *dirp = NULL, *inner_dirp = NULL;
@@ -63,8 +65,8 @@ struct dirent *dir_ent = NULL, *prev_dir_ent = NULL;
 long pid = 0;
 char *str = NULL, *endptr = NULL;
 
-char status_folder_path[256] = {0};
-char status_path[256] = {0};
+char status_folder_path[MAX_PATH_LEN] = {0};
+char status_path[MAX_PATH_LEN] = {0};
 FILE*  status_file_ptr = 0;
 char* name_buf = NULL;
 
@@ -74,7 +76,7 @@ if (unlikely((dirp = opendir (PROC_PATH)) == NULL))
 
 max_len_of_name = pathconf (PROC_PATH, _PC_NAME_MAX);
 if (max_len_of_name == -1)             /* Limit not defined, or error */
-        max_len_of_name = 255;         /* Take a guess */
+        max_len_of_name = MAX_PATH_LEN - 1;         /* Take a guess */
 len_of_dir_ent = offsetof (struct dirent, d_name) + max_len_of_name + 1;
 
 if (unlikely((dir_ent = (struct dirent*)calloc (1, len_of_dir_ent)) == NULL))
@@ -119,7 +121,7 @@ while (1)
         //======================================================================
         // Try to get 'status' file
         //----------------------------------------------------------------------
-        if (snprintf (status_folder_path, 255, PROC_PATH "/%ld/" "%c", pid, '\0') < 0)
+        if (snprintf (status_folder_path, MAX_PATH_LEN - 1, PROC_PATH "/%ld/" "%c", pid, '\0') < 0)
                 HANDLE_ERROR ("snprintf: status_folder_path");
         if (unlikely((inner_dirp = opendir (status_folder_path)) == NULL))
                 HANDLE_ERROR ("opendir: status_folder_path");
@@ -144,7 +146,7 @@ while (1)
                 if (strcmp (dir_ent->d_name, TARGET_FILE_NAME) == 0)
                         {
                         // we found 'status' file
-                        if (snprintf (status_path, 255, PROC_PATH "/%ld/" TARGET_FILE_NAME "%c", pid, '\0') < 0)
+                        if (snprintf (status_path, MAX_PATH_LEN - 1, PROC_PATH "/%ld/" TARGET_FILE_NAME "%c", pid, '\0') < 0)
                                 HANDLE_ERROR ("snprintf: status_path");
 
                         // printf ("%s\n", status_path);
@@ -152,7 +154,7 @@ while (1)
                         if ((status_file_ptr = fopen (status_path, "r")) == NULL)
                                 HANDLE_ERROR ("fdopen");
 
-                        if (fgets (name_buf, 256, status_file_ptr) == NULL)
+                        if (fgets (name_buf, MAX_PATH_LEN, status_file_ptr) == NULL)
                                 HANDLE_ERROR ("fgets");
 
                         printf ("Pid:\t%ld\n", pid);
